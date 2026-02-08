@@ -16,17 +16,7 @@ openai==1.10.0
 langchain==0.1.4
 langchain-openai==0.0.5
 
-# Speech-to-Text
-openai-whisper==20231117
-yt-dlp==2024.3.10
-pydub==0.25.1
-
-# NLP & Text Processing
-nltk==3.8.1
-
-# Vector Database
-
-# YouTube Integration
+# Speech-to-Text & YouTube Integration (lightweight, FREE!)
 youtube-transcript-api==0.6.2
 
 # Utilities
