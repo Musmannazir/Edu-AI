@@ -3,7 +3,6 @@ Transcription service using OpenAI Whisper and YouTube Transcripts
 """
 import os
 import tempfile
-import whisper
 from openai import AsyncOpenAI
 from typing import Optional
 import yt_dlp
@@ -12,7 +11,6 @@ from app.core.config import settings
 import platform
 import shutil
 import asyncio
-from functools import lru_cache
 
 
 class TranscriptionService:
@@ -23,7 +21,6 @@ class TranscriptionService:
         self.youtube_api = YouTubeTranscriptApi()
         # Make OpenAI client optional - only initialize if API key is provided
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-        self.whisper_model = None
         self.ffmpeg_path = self._get_ffmpeg_path()
     
     def _get_ffmpeg_path(self) -> Optional[str]:
@@ -46,17 +43,9 @@ class TranscriptionService:
         
         return None
     
-    def _load_whisper_model(self, model_name: str = "base"):
-        """Load local Whisper model (lazy loading)"""
-        if self.whisper_model is None:
-            print(f"Loading Whisper model '{model_name}'... This may take a moment on first run.")
-            self.whisper_model = whisper.load_model(model_name)
-        return self.whisper_model
-    
     async def transcribe_audio_file(self, file_path: str) -> str:
         """
-        Transcribe an audio file using LOCAL Whisper (FREE!)
-        Falls back to OpenAI API only if local fails
+        Transcribe an audio file using OpenAI Whisper API
         
         Args:
             file_path: Path to the audio file
@@ -64,35 +53,19 @@ class TranscriptionService:
         Returns:
             Transcribed text
         """
-        # Try LOCAL Whisper first (FREE!)
+        if not self.client:
+            raise Exception("OpenAI API key is not configured. Please add OPENAI_API_KEY to environment variables.")
+        
         try:
-            # Run in thread pool to avoid blocking
-            transcript = await asyncio.to_thread(self._transcribe_with_local_whisper, file_path)
+            with open(file_path, "rb") as audio_file:
+                transcript = await self.client.audio.transcriptions.create(
+                    model=settings.WHISPER_MODEL,
+                    file=audio_file,
+                    response_format="text"
+                )
             return transcript
-        except Exception as local_error:
-            print(f"Local Whisper failed: {local_error}")
-            
-            # Only try OpenAI if we have a client configured
-            if not self.client:
-                raise Exception(f"Local Whisper transcription failed and OpenAI API key is not configured. Error: {str(local_error)}. Please ensure audio file is valid.")
-            
-            # Fallback to OpenAI API
-            try:
-                with open(file_path, "rb") as audio_file:
-                    transcript = await self.client.audio.transcriptions.create(
-                        model=settings.WHISPER_MODEL,
-                        file=audio_file,
-                        response_format="text"
-                    )
-                return transcript
-            except Exception as e:
-                raise Exception(f"Transcription failed: {str(e)}")
-    
-    def _transcribe_with_local_whisper(self, file_path: str) -> str:
-        """Transcribe using local Whisper model"""
-        model = self._load_whisper_model("base")  # base model is fast and accurate
-        result = model.transcribe(file_path)
-        return result["text"]
+        except Exception as e:
+            raise Exception(f"Transcription failed: {str(e)}")
     
     async def transcribe_youtube_video(self, youtube_url: str) -> tuple[str, dict]:
         """
