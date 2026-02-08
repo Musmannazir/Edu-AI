@@ -180,7 +180,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 rounded-lg font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
             >
               <Sparkles className="w-5 h-5" />
-              Start Learning Now - It's Free!
+              Start Learning Now - It&apos;s Free!
             </Link>
           </div>
         </div>
