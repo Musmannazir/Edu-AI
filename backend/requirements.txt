@@ -17,6 +17,7 @@ langchain==0.1.4
 langchain-openai==0.0.5
 
 # Speech-to-Text
+openai-whisper==20231117
 yt-dlp==2024.3.10
 pydub==0.25.1
 
