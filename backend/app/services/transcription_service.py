@@ -17,8 +17,7 @@ class TranscriptionService:
     """Service for transcribing audio and video content"""
     
     def __init__(self):
-        # Initialize YouTube Transcript API
-        self.youtube_api = YouTubeTranscriptApi()
+        # YouTube Transcript API (doesn't need initialization)
         # Make OpenAI client optional - only initialize if API key is provided
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
         self.ffmpeg_path = self._get_ffmpeg_path()
@@ -83,17 +82,17 @@ class TranscriptionService:
             
             # Run the synchronous YouTube API call in a thread pool to avoid blocking
             try:
-                # Run fetch in a thread to avoid blocking the event loop (with 30 second timeout)
-                transcript_data = await asyncio.wait_for(
+                # Run get_transcript in a thread to avoid blocking the event loop (with 30 second timeout)
+                transcript_list = await asyncio.wait_for(
                     asyncio.to_thread(
-                        self.youtube_api.fetch, 
+                        YouTubeTranscriptApi.get_transcript, 
                         video_id, 
                         languages=['en']
                     ),
                     timeout=30.0
                 )
-                # Access the snippets attribute and combine transcript text
-                transcript = " ".join([snippet.text for snippet in transcript_data.snippets])
+                # Combine transcript snippets into one string
+                transcript = " ".join([item['text'] for item in transcript_list])
                 
                 # Get basic metadata
                 metadata = self._get_youtube_metadata(youtube_url)
