@@ -16,7 +16,7 @@ langchain==0.1.4
 langchain-openai==0.0.5
 
 # Speech-to-Text
-yt-dlp==2024.1.19
+yt-dlp==2024.3.10
 pydub==0.25.1
 
 # NLP & Text Processing
